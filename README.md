@@ -60,6 +60,7 @@ This repo includes `vercel.json` for the Vite client. Vercel hosts static files 
 1. Deploy the backend with the build/start commands above.
 2. Deploy this repo on Vercel (uses `vercel.json` automatically).
 3. Set **`VITE_SOCKET_URL`** to your backend URL (e.g. `https://your-app.onrender.com`).
+4. On Render, set **`CLIENT_ORIGIN`** to your Vercel URL (e.g. `https://chessroulette-tau.vercel.app`) so Socket.io allows cross-origin connections. If unset, the server allows any origin in production.
 
 ## Testing the full flow
 

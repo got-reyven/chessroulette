@@ -7,13 +7,26 @@ import { registerSocketHandlers } from "./socketHandlers";
 const PORT = parseInt(process.env.PORT || "3000", 10);
 const isDev = process.env.NODE_ENV !== "production";
 
+function socketCorsOptions() {
+  const fromEnv = process.env.CLIENT_ORIGIN?.split(",")
+    .map((o) => o.trim())
+    .filter(Boolean);
+
+  if (fromEnv?.length) {
+    return { origin: fromEnv, methods: ["GET", "POST"] };
+  }
+  if (isDev) {
+    return { origin: "http://localhost:5173", methods: ["GET", "POST"] };
+  }
+  // Vercel (or other) frontend on a different origin than this server
+  return { origin: true, methods: ["GET", "POST"] };
+}
+
 const app = express();
 const server = http.createServer(app);
 
 const io = new Server(server, {
-  cors: isDev
-    ? { origin: "http://localhost:5173", methods: ["GET", "POST"] }
-    : undefined,
+  cors: socketCorsOptions(),
 });
 
 registerSocketHandlers(io);
