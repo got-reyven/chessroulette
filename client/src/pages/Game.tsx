@@ -45,6 +45,13 @@ export function Game({
     [opponentName, color]
   );
 
+  const isMyTurn = turn === color && !gameOver && !opponentLeft;
+  const turnLabel = isMyTurn
+    ? "Your turn"
+    : gameOver || opponentLeft
+      ? "Game ended"
+      : "Opponent's turn";
+
   const overlayMessage = opponentLeft
     ? opponentLeft
     : gameOver
@@ -54,50 +61,61 @@ export function Game({
       : null;
 
   return (
-    <div className="game">
-      {requeued && (
-        <div className="game-banner">Finding next opponent…</div>
-      )}
-      {overlayMessage && !requeued && (
-        <div className="game-overlay">
-          <div className="game-overlay-card">
-            <h2>{opponentLeft ? "Opponent left" : "Game over"}</h2>
-            <p>{overlayMessage}</p>
-            <p style={{ marginTop: "1rem", fontSize: "0.85rem" }}>
-              Re-entering matchmaking…
-            </p>
-          </div>
+    <div className="game-shell">
+      <header className="game-header">
+        <span className="game-header-brand">Chess Roulette</span>
+        <div className="game-header-meta">
+          <span
+            className={`game-turn-pill ${isMyTurn ? "game-turn-pill--yours" : "game-turn-pill--waiting"}`}
+          >
+            {turnLabel}
+          </span>
         </div>
-      )}
+      </header>
 
-      <div className="game-board-col">
-        <ChessBoard
-          fen={fen}
-          color={color}
-          turn={turn}
-          onMove={onMove}
-          disabled={!!gameOver || !!opponentLeft}
-        />
-      </div>
+      <div className="game">
+        {requeued && (
+          <div className="game-banner">Finding next opponent…</div>
+        )}
+        {overlayMessage && !requeued && (
+          <div className="game-overlay">
+            <div className="game-overlay-card">
+              <h2>{opponentLeft ? "Opponent left" : "Game over"}</h2>
+              <p>{overlayMessage}</p>
+              <p className="game-overlay-sub">Re-entering matchmaking…</p>
+            </div>
+          </div>
+        )}
 
-      <MoveHistory history={history} />
+        <div className="game-board-col">
+          <ChessBoard
+            fen={fen}
+            color={color}
+            turn={turn}
+            onMove={onMove}
+            disabled={!!gameOver || !!opponentLeft}
+          />
+        </div>
 
-      <div className="game-players-col">
-        <PlayerPanel
-          label={oppLabel}
-          stream={remoteStream}
-          placeholder={
-            mediaError ? `Video: ${mediaError}` : "Opponent video"
-          }
-        />
-        <PlayerPanel
-          label={myLabel}
-          stream={localStream}
-          isLocal
-          placeholder={
-            mediaError ? `Camera unavailable` : "Your video"
-          }
-        />
+        <MoveHistory history={history} />
+
+        <div className="game-players-col">
+          <PlayerPanel
+            label={oppLabel}
+            stream={remoteStream}
+            placeholder={
+              mediaError ? `Video: ${mediaError}` : "Waiting for opponent video"
+            }
+          />
+          <PlayerPanel
+            label={myLabel}
+            stream={localStream}
+            isLocal
+            placeholder={
+              mediaError ? "Camera unavailable" : "Your camera feed"
+            }
+          />
+        </div>
       </div>
     </div>
   );

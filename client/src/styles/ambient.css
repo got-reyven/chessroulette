@@ -1,0 +1,127 @@
+.ambient {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.ambient__base {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 120% 80% at 50% -20%, #1a2438 0%, transparent 55%),
+    radial-gradient(ellipse 80% 60% at 100% 100%, #121820 0%, transparent 50%),
+    linear-gradient(165deg, #080b10 0%, #0e1219 40%, #0a0d12 100%);
+}
+
+.ambient__mesh {
+  position: absolute;
+  width: 140%;
+  height: 140%;
+  top: -20%;
+  left: -20%;
+  opacity: 0.45;
+  filter: blur(80px);
+  animation: ambient-drift 28s ease-in-out infinite;
+}
+
+.ambient__mesh--a {
+  background:
+    radial-gradient(circle at 30% 40%, rgba(201, 162, 39, 0.18) 0%, transparent 45%),
+    radial-gradient(circle at 70% 60%, rgba(52, 211, 153, 0.1) 0%, transparent 40%);
+}
+
+.ambient__mesh--b {
+  background:
+    radial-gradient(circle at 60% 30%, rgba(99, 102, 241, 0.12) 0%, transparent 42%),
+    radial-gradient(circle at 20% 80%, rgba(201, 162, 39, 0.08) 0%, transparent 38%);
+  animation-duration: 36s;
+  animation-direction: reverse;
+}
+
+.ambient__grid {
+  position: absolute;
+  inset: 0;
+  opacity: 0.035;
+  background-image:
+    linear-gradient(rgba(240, 235, 227, 0.5) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(240, 235, 227, 0.5) 1px, transparent 1px);
+  background-size: 64px 64px;
+  mask-image: radial-gradient(ellipse 90% 80% at 50% 50%, black 20%, transparent 75%);
+}
+
+.ambient__orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+  animation: ambient-float 22s ease-in-out infinite;
+}
+
+.ambient__orb--1 {
+  width: 320px;
+  height: 320px;
+  top: 10%;
+  left: 5%;
+  background: rgba(201, 162, 39, 0.12);
+}
+
+.ambient__orb--2 {
+  width: 280px;
+  height: 280px;
+  bottom: 15%;
+  right: 8%;
+  background: rgba(52, 211, 153, 0.08);
+  animation-delay: -8s;
+  animation-duration: 26s;
+}
+
+.ambient__orb--3 {
+  width: 200px;
+  height: 200px;
+  top: 55%;
+  left: 45%;
+  background: rgba(129, 140, 248, 0.07);
+  animation-delay: -14s;
+  animation-duration: 30s;
+}
+
+.ambient__vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse 70% 60% at 50% 50%,
+    transparent 0%,
+    rgba(0, 0, 0, 0.45) 100%
+  );
+}
+
+@keyframes ambient-drift {
+  0%,
+  100% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+  33% {
+    transform: translate(3%, 2%) rotate(2deg);
+  }
+  66% {
+    transform: translate(-2%, 3%) rotate(-1deg);
+  }
+}
+
+@keyframes ambient-float {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(24px, -32px) scale(1.08);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ambient__mesh,
+  .ambient__orb {
+    animation: none;
+  }
+}

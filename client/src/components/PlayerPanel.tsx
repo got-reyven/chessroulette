@@ -26,19 +26,27 @@ export function PlayerPanel({
   }, [stream]);
 
   return (
-    <div className="player-panel">
+    <div className={`player-panel ${isLocal ? "player-panel--local" : ""}`}>
       <div className="panel-header">{label}</div>
       <div className="player-panel-video-wrap">
         {stream ? (
-          <video
-            ref={videoRef}
-            autoPlay
-            playsInline
-            muted={isLocal}
-            className="player-panel-video"
-          />
+          <>
+            <span className="player-panel-live">Live</span>
+            <video
+              ref={videoRef}
+              autoPlay
+              playsInline
+              muted={isLocal}
+              className="player-panel-video"
+            />
+          </>
         ) : (
-          <div className="player-panel-placeholder">{placeholder}</div>
+          <div className="player-panel-placeholder">
+            <span className="player-panel-placeholder-icon" aria-hidden="true">
+              {isLocal ? "📷" : "👤"}
+            </span>
+            {placeholder}
+          </div>
         )}
       </div>
     </div>

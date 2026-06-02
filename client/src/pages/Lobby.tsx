@@ -12,16 +12,27 @@ export function Lobby({ connected, searching, onFindMatch }: LobbyProps) {
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    onFindMatch(nickname.trim() || `Guest-${Math.random().toString(36).slice(2, 8)}`);
+    onFindMatch(
+      nickname.trim() || `Guest-${Math.random().toString(36).slice(2, 8)}`
+    );
   }
 
   return (
     <div className="lobby">
       <div className="lobby-card">
-        <h1 className="lobby-title">Chess Roulette</h1>
+        <div className="lobby-badge">Live matchmaking</div>
+        <h1 className="lobby-title">
+          Chess <span className="lobby-title-accent">Roulette</span>
+        </h1>
         <p className="lobby-subtitle">
-          Get matched randomly. Play chess face-to-face on video.
+          Spin the queue. Meet a stranger. Play face-to-face over video.
         </p>
+        <div className="lobby-pieces" aria-hidden="true">
+          <span>♞</span>
+          <span>♜</span>
+          <span>♛</span>
+          <span>♝</span>
+        </div>
         <form className="lobby-form" onSubmit={handleSubmit}>
           <input
             type="text"

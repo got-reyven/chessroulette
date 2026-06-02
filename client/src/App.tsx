@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { AmbientBackground } from "./components/AmbientBackground";
 import { useSocket } from "./hooks/useSocket";
 import { useWebRTC } from "./hooks/useWebRTC";
 import { Lobby } from "./pages/Lobby";
@@ -131,31 +132,34 @@ export default function App() {
     [socket]
   );
 
-  if (view === "game") {
-    return (
-      <Game
-        fen={fen}
-        color={color}
-        turn={turn}
-        history={history}
-        opponentName={opponentName}
-        myName={myName}
-        localStream={localStream}
-        remoteStream={remoteStream}
-        mediaError={mediaError}
-        gameOver={gameOver}
-        opponentLeft={opponentLeft}
-        requeued={requeued}
-        onMove={handleMove}
-      />
-    );
-  }
-
   return (
-    <Lobby
-      connected={connected}
-      searching={searching}
-      onFindMatch={handleFindMatch}
-    />
+    <>
+      <AmbientBackground />
+      <div className="app-shell">
+        {view === "game" ? (
+          <Game
+            fen={fen}
+            color={color}
+            turn={turn}
+            history={history}
+            opponentName={opponentName}
+            myName={myName}
+            localStream={localStream}
+            remoteStream={remoteStream}
+            mediaError={mediaError}
+            gameOver={gameOver}
+            opponentLeft={opponentLeft}
+            requeued={requeued}
+            onMove={handleMove}
+          />
+        ) : (
+          <Lobby
+            connected={connected}
+            searching={searching}
+            onFindMatch={handleFindMatch}
+          />
+        )}
+      </div>
+    </>
   );
 }
