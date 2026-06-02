@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { io, Socket } from "socket.io-client";
 
-const SOCKET_URL = import.meta.env.DEV ? undefined : undefined;
+const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || undefined;
 
 export function useSocket() {
   const socketRef = useRef<Socket | null>(null);

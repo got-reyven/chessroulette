@@ -53,6 +53,14 @@ This repo includes a `render.yaml` blueprint for one-click deploy on Render.
 
 Use the same build/start commands. Enable public networking.
 
+### Vercel (frontend only)
+
+This repo includes `vercel.json` for the Vite client. Vercel hosts static files only; the Socket.io server must run elsewhere (Render/Railway).
+
+1. Deploy the backend with the build/start commands above.
+2. Deploy this repo on Vercel (uses `vercel.json` automatically).
+3. Set **`VITE_SOCKET_URL`** to your backend URL (e.g. `https://your-app.onrender.com`).
+
 ## Testing the full flow
 
 1. Deploy and open the public URL on two devices (or two browsers).
