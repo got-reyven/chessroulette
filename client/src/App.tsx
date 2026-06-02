@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useSocket } from "./hooks/useSocket";
 import { useWebRTC } from "./hooks/useWebRTC";
 import { Lobby } from "./pages/Lobby";
@@ -31,7 +31,10 @@ export default function App() {
   const [opponentLeft, setOpponentLeft] = useState<string | null>(null);
   const [requeued, setRequeued] = useState(false);
 
-  const activeSocket = socket.current;
+  const activeSocket = connected ? socket.current : null;
+  const gameActiveRef = useRef(false);
+  gameActiveRef.current =
+    view === "game" && !!roomId && !gameOver && !opponentLeft;
 
   const { localStream, remoteStream, mediaError } = useWebRTC(
     activeSocket,
@@ -75,6 +78,7 @@ export default function App() {
     };
 
     const onRequeued = () => {
+      if (gameActiveRef.current) return;
       setRequeued(true);
       setGameOver(null);
       setOpponentLeft(null);

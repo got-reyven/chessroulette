@@ -96,6 +96,12 @@ export function registerSocketHandlers(io: Server): void {
       }
     );
 
+    socket.on("webrtc_ready", () => {
+      const roomId = socket.data.roomId as string | undefined;
+      if (!roomId) return;
+      socket.to(roomId).emit("peer_webrtc_ready");
+    });
+
     socket.on("webrtc_offer", (payload: { sdp: unknown }) => {
       const roomId = socket.data.roomId as string | undefined;
       if (!roomId) return;
@@ -117,21 +123,34 @@ export function registerSocketHandlers(io: Server): void {
     socket.on("disconnect", () => {
       removeFromQueue(socket.id);
       const roomId = socket.data.roomId as string | undefined;
-      if (roomId && socket.data.status === "in_game") {
-        socket.to(roomId).emit("opponent_left", {
+      if (!roomId || socket.data.status !== "in_game") return;
+
+      const disconnectedId = socket.id;
+      const survivor = Array.from(io.sockets.sockets.values()).find(
+        (s) => s.data.roomId === roomId && s.id !== disconnectedId
+      );
+      const survivorId = survivor?.id;
+
+      setTimeout(() => {
+        if (io.sockets.sockets.has(disconnectedId)) return;
+
+        const survivorNow = survivorId
+          ? io.sockets.sockets.get(survivorId)
+          : undefined;
+        if (!survivorNow || survivorNow.data.roomId !== roomId) return;
+        if (!getRoom(roomId)) return;
+
+        io.to(roomId).emit("opponent_left", {
           message: "Opponent disconnected",
         });
-        const survivor = Array.from(io.sockets.sockets.values()).find(
-          (s) => s.data.roomId === roomId && s.id !== socket.id
-        );
         endRoom(io, roomId);
-        if (survivor) {
-          survivor.data.status = "idle";
-          survivor.data.roomId = undefined;
-          survivor.data.color = undefined;
-          requeuePlayer(io, survivor);
+        if (survivorNow.connected) {
+          survivorNow.data.status = "idle";
+          survivorNow.data.roomId = undefined;
+          survivorNow.data.color = undefined;
+          requeuePlayer(io, survivorNow);
         }
-      }
+      }, 3000);
     });
   });
 }

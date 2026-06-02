@@ -5,6 +5,11 @@ const ICE_SERVERS: RTCConfiguration = {
   iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
 };
 
+type Signal =
+  | { type: "offer"; sdp: RTCSessionDescriptionInit }
+  | { type: "answer"; sdp: RTCSessionDescriptionInit }
+  | { type: "ice"; candidate: RTCIceCandidateInit };
+
 export function useWebRTC(
   socket: Socket | null,
   roomId: string | null,
@@ -35,6 +40,107 @@ export function useWebRTC(
 
     const s = socket;
     let cancelled = false;
+    let peerReady = false;
+    let localReady = false;
+    let offerSent = false;
+    const pendingSignals: Signal[] = [];
+    const iceQueue: RTCIceCandidateInit[] = [];
+
+    const drainIceQueue = async (pc: RTCPeerConnection) => {
+      while (iceQueue.length > 0) {
+        const candidate = iceQueue.shift();
+        if (!candidate) continue;
+        try {
+          await pc.addIceCandidate(new RTCIceCandidate(candidate));
+        } catch {
+          /* ignore stale candidates */
+        }
+      }
+    };
+
+    const sendOffer = async (pc: RTCPeerConnection) => {
+      const offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
+      s.emit("webrtc_offer", { sdp: offer });
+    };
+
+    const processSignal = async (signal: Signal) => {
+      const pc = pcRef.current;
+      if (!pc) return;
+
+      if (signal.type === "offer") {
+        await pc.setRemoteDescription(new RTCSessionDescription(signal.sdp));
+        await drainIceQueue(pc);
+        const answer = await pc.createAnswer();
+        await pc.setLocalDescription(answer);
+        s.emit("webrtc_answer", { sdp: answer });
+        return;
+      }
+
+      if (signal.type === "answer") {
+        await pc.setRemoteDescription(new RTCSessionDescription(signal.sdp));
+        await drainIceQueue(pc);
+        return;
+      }
+
+      if (!pc.remoteDescription) {
+        iceQueue.push(signal.candidate);
+        return;
+      }
+      try {
+        await pc.addIceCandidate(new RTCIceCandidate(signal.candidate));
+      } catch {
+        /* ignore stale candidates */
+      }
+    };
+
+    const flushSignals = () => {
+      if (!localReady || !pcRef.current) return;
+      while (pendingSignals.length > 0) {
+        const signal = pendingSignals.shift();
+        if (signal) void processSignal(signal);
+      }
+    };
+
+    const queueSignal = (signal: Signal) => {
+      if (localReady && pcRef.current) {
+        void processSignal(signal);
+      } else {
+        pendingSignals.push(signal);
+      }
+    };
+
+    const tryStartCall = () => {
+      if (
+        !isInitiator ||
+        !localReady ||
+        !peerReady ||
+        !pcRef.current ||
+        offerSent
+      ) {
+        return;
+      }
+      offerSent = true;
+      void sendOffer(pcRef.current);
+    };
+
+    const onOffer = (data: { sdp: RTCSessionDescriptionInit }) => {
+      queueSignal({ type: "offer", sdp: data.sdp });
+    };
+
+    const onAnswer = (data: { sdp: RTCSessionDescriptionInit }) => {
+      queueSignal({ type: "answer", sdp: data.sdp });
+    };
+
+    const onIce = (data: { candidate: RTCIceCandidateInit }) => {
+      if (!data.candidate) return;
+      queueSignal({ type: "ice", candidate: data.candidate });
+    };
+
+    const onPeerReady = () => {
+      peerReady = true;
+      tryStartCall();
+    };
 
     async function start() {
       try {
@@ -56,8 +162,9 @@ export function useWebRTC(
         stream.getTracks().forEach((track) => pc.addTrack(track, stream));
 
         pc.ontrack = (ev) => {
-          const [remote] = ev.streams;
-          if (remote) setRemoteStream(remote);
+          const stream =
+            ev.streams[0] ?? new MediaStream([ev.track]);
+          setRemoteStream(stream);
         };
 
         pc.onicecandidate = (ev) => {
@@ -66,48 +173,21 @@ export function useWebRTC(
           }
         };
 
-        const onOffer = async (data: { sdp: RTCSessionDescriptionInit }) => {
-          if (!pcRef.current) return;
-          await pcRef.current.setRemoteDescription(
-            new RTCSessionDescription(data.sdp)
-          );
-          const answer = await pcRef.current.createAnswer();
-          await pcRef.current.setLocalDescription(answer);
-          s.emit("webrtc_answer", { sdp: answer });
-        };
-
-        const onAnswer = async (data: { sdp: RTCSessionDescriptionInit }) => {
-          if (!pcRef.current) return;
-          await pcRef.current.setRemoteDescription(
-            new RTCSessionDescription(data.sdp)
-          );
-        };
-
-        const onIce = async (data: { candidate: RTCIceCandidateInit }) => {
-          if (!pcRef.current || !data.candidate) return;
-          try {
-            await pcRef.current.addIceCandidate(
-              new RTCIceCandidate(data.candidate)
-            );
-          } catch {
-            /* ignore stale candidates */
-          }
-        };
-
         s.on("webrtc_offer", onOffer);
         s.on("webrtc_answer", onAnswer);
         s.on("webrtc_ice", onIce);
+        s.on("peer_webrtc_ready", onPeerReady);
 
-        if (isInitiator) {
-          const offer = await pc.createOffer();
-          await pc.setLocalDescription(offer);
-          s.emit("webrtc_offer", { sdp: offer });
-        }
+        localReady = true;
+        flushSignals();
+        s.emit("webrtc_ready");
+        tryStartCall();
 
         return () => {
           s.off("webrtc_offer", onOffer);
           s.off("webrtc_answer", onAnswer);
           s.off("webrtc_ice", onIce);
+          s.off("peer_webrtc_ready", onPeerReady);
         };
       } catch (err) {
         if (!cancelled) {

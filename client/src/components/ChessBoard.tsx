@@ -26,12 +26,8 @@ export function ChessBoard({
         arePiecesDraggable={canMove}
         onPieceDrop={(source, target) => {
           if (!canMove) return false;
-          const isPromotion =
-            (color === "w" && target[1] === "8") ||
-            (color === "b" && target[1] === "1");
-          const piece = source[0];
-          const needsPromo =
-            isPromotion && (piece === "w" || piece === "b");
+          const promoRank = color === "w" ? "8" : "1";
+          const needsPromo = target[1] === promoRank;
           onMove(source, target, needsPromo ? "q" : undefined);
           return false;
         }}

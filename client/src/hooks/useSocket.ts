@@ -8,7 +8,12 @@ export function useSocket() {
   const [connected, setConnected] = useState(false);
 
   useEffect(() => {
-    const socket = io(SOCKET_URL, { path: "/socket.io" });
+    const socket = io(SOCKET_URL, {
+      path: "/socket.io",
+      transports: ["websocket", "polling"],
+      reconnection: true,
+      reconnectionAttempts: Infinity,
+    });
     socketRef.current = socket;
 
     socket.on("connect", () => setConnected(true));

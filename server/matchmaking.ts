@@ -94,6 +94,7 @@ export function tryPair(io: Server): void {
 
 export function requeuePlayer(io: Server, socket: Socket): void {
   if (!socket.connected) return;
+  if (socket.data.status === "in_game") return;
   const nickname =
     (socket.data.nickname as string) || `Guest-${socket.id.slice(0, 6)}`;
   socket.data.roomId = undefined;

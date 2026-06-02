@@ -20,6 +20,9 @@ export function PlayerPanel({
     const el = videoRef.current;
     if (!el) return;
     el.srcObject = stream;
+    if (stream) {
+      void el.play().catch(() => {});
+    }
   }, [stream]);
 
   return (
